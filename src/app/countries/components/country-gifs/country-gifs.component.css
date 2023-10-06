@@ -1,0 +1,13 @@
+img {
+  height: 20rem;
+}
+
+.cards {
+  border: solid 1px white;
+  height: 40vh;
+}
+
+a {
+  text-decoration: none;
+  color: white;
+}

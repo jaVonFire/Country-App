@@ -9,6 +9,8 @@ import { ByCountryPageComponent } from './pages/by-country-page/by-country-page.
 import { ByRegionPageComponent } from './pages/by-region-page/by-region-page.component';
 import { CountryPageComponent } from './pages/country-page/country-page.component';
 import { CountryTableComponent } from './components/country-table/country-table.component';
+import { CountryGifsComponent } from './components/country-gifs/country-gifs.component';
+import { ButtonGifComponent } from './components/button-gifs/button-gifs.component';
 
 
 
@@ -18,7 +20,9 @@ import { CountryTableComponent } from './components/country-table/country-table.
     ByCountryPageComponent,
     ByRegionPageComponent,
     CountryPageComponent,
-    CountryTableComponent
+    CountryTableComponent,
+    CountryGifsComponent,
+    ButtonGifComponent
   ],
   imports: [
     CommonModule,

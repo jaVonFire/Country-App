@@ -1,0 +1,9 @@
+button {
+  padding: 0rem 3rem;
+  transition: all 300ms;
+  color: white;
+}
+
+button:hover {
+  transform: scale(1.2);
+}

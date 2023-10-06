@@ -1,48 +1,93 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, map, of } from 'rxjs'
+import { HttpClient, HttpParams } from '@angular/common/http';
 
-import { Country } from '../interfaces/country';
+import { Observable, catchError, delay, tap, map, of } from 'rxjs'
+
+import { Country } from '../interfaces/country.interface';
+import { CacheStore } from '../interfaces/cache-store.interface';
+import { Region } from '../interfaces/region.type';
+import { Gif, SearchResponse } from '../interfaces/country-gifs.interface';
 
 @Injectable({providedIn: 'root'})
 
 export class CountriesServices {
 
-  private apiUrl: string = 'https://restcountries.com/v3.1'
+  private apiCountriesUrl: string = 'https://restcountries.com/v3.1'
+  private apiGifsCountriesUrl: string = 'yIEopdsqujVxi3ek3YDEs7gnMCP98LHh'
+  private serviceUrl: string = 'https://api.giphy.com/v1/gifs'
+  public gifList: Gif[] = [];
 
-  constructor(private http: HttpClient) { }
+  public cacheStore: CacheStore = {
+    byCapital:   { term: '', countries: [] },
+    byCountries: { term: '', countries: [] },
+    byRegion:    { region: '', countries: [] },
+  }
 
-  searchCountryByAlphaCode( code: string ): Observable<Country | null> {
-    const url = `${ this.apiUrl }/alpha/${code}`
+  constructor(private http: HttpClient) { this.loadFromLocalStorage() }
+
+  private saveToLocalStorage() {
+    localStorage.setItem( 'cacheStore', JSON.stringify( this.cacheStore ));
+  }
+
+  private loadFromLocalStorage() {
+    if ( !localStorage.getItem('cacheStore') ) {return}
+    this.cacheStore = JSON.parse( localStorage.getItem('cacheStore')! )
+  }
+
+  private getCountriesReq( url: string ): Observable<Country[]> {
     return this.http.get<Country[]>( url )
       .pipe(
-        map( countries => countries.length > 0 ? countries[0]: null ),
+        catchError( () => of([])),
+        delay( 1000 )
+      )
+  }
+
+  searchCountryByAlphaCode( code: string ): Observable<Country | null> {
+    const url = `${ this.apiCountriesUrl }/alpha/${code}`
+    return this.http.get<Country[]>( url )
+      .pipe(
+        map( res => res.length > 0 ? res[0]: null ),
         catchError( () => of(null) )
       )
   }
 
   searchCapital( term: string ): Observable<Country[]> {
-    const url = `${ this.apiUrl }/capital/${term}`
-    return this.http.get<Country[]>( url )
+    const url = `${ this.apiCountriesUrl }/capital/${term}`
+    return this.getCountriesReq(url)
       .pipe(
-        catchError( () => of([]) )
+        tap( ( res ) => this.cacheStore.byCapital = { term, countries: res } ),
+        tap( () => this.saveToLocalStorage() )
       )
   }
 
   searchCountry( term: string ): Observable<Country[]> {
-    const url = `${ this.apiUrl }/name/${term}`
-    return this.http.get<Country[]>( url )
+    const url = `${ this.apiCountriesUrl }/name/${term}`
+    return this.getCountriesReq(url)
       .pipe(
-        catchError( () => of([]) )
+        tap( ( res ) => this.cacheStore.byCountries = { term, countries: res } ),
+        tap( () => this.saveToLocalStorage() )
       )
   }
 
-  searchRegion( region: string ): Observable<Country[]> {
-    const url = `${ this.apiUrl }/region/${region}`
-    return this.http.get<Country[]>( url )
+  searchRegion( region: Region ): Observable<Country[]> {
+    const url = `${ this.apiCountriesUrl }/region/${region}`
+    return this.getCountriesReq(url)
       .pipe(
-        catchError( () => of([]) )
+        tap( ( res ) => this.cacheStore.byRegion = { region, countries: res } ),
+        tap( () => this.saveToLocalStorage() )
       )
+  }
+
+  gifsSearch( country: string ): void {
+
+    const params = new HttpParams()
+      .set('api_key', this.apiGifsCountriesUrl )
+      .set('limit', '12' )
+      .set('q', country )
+
+    this.http.get<SearchResponse>(`${this.serviceUrl}/search`, { params }).subscribe( res =>{
+      this.gifList = res.data;
+    })
   }
 
 }
